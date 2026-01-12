@@ -1,7 +1,211 @@
-<!DOCTYPE html>
-<html>
-<body>
-<h1>GitanX</h1>
-<pre id="code">loadstring(game:HttpGet("https://raw.githubusercontent.com/fddttttt/GitanX/refs/heads/main/GitanX.lua"))()</pre>
-</body>
-</html>
+import React, { useState } from 'react';
+import { Shield, Copy, Trash2, Lock, CheckCircle, AlertCircle } from 'lucide-react';
+
+export default function GitanXProtector() {
+  const [inputScript, setInputScript] = useState('');
+  const [loadstring, setLoadstring] = useState('');
+  const [scriptId, setScriptId] = useState('');
+  const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
+
+  const generateId = () => {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  };
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => setNotification({ show: false, message: '', type: 'success' }), 3000);
+  };
+
+  const protectScript = async () => {
+    if (!inputScript.trim()) {
+      showNotification('⚠️ Veuillez entrer un script !', 'error');
+      return;
+    }
+
+    const id = generateId();
+    
+    try {
+      // Sauvegarde le script dans le stockage avec shared=true
+      await window.storage.set(`script:${id}`, inputScript, true);
+      
+      setScriptId(id);
+      const generatedLoadstring = `loadstring(game:HttpGet("https://fddttttt.github.io/GitanX/api/${id}"))()`;
+      setLoadstring(generatedLoadstring);
+      
+      showNotification('✅ Script protégé avec succès !');
+    } catch (error) {
+      showNotification('❌ Erreur lors de la sauvegarde', 'error');
+      console.error(error);
+    }
+  };
+
+  const copyLoadstring = () => {
+    if (!loadstring) {
+      showNotification('⚠️ Aucun loadstring à copier !', 'error');
+      return;
+    }
+
+    navigator.clipboard.writeText(loadstring);
+    showNotification('📋 Loadstring copié !');
+  };
+
+  const clearAll = () => {
+    setInputScript('');
+    setLoadstring('');
+    setScriptId('');
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 flex items-center justify-center p-4">
+      {/* Notification */}
+      {notification.show && (
+        <div className={`fixed top-6 right-6 ${notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 animate-slide-in z-50`}>
+          {notification.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+          <span className="font-medium">{notification.message}</span>
+        </div>
+      )}
+
+      <div className="bg-white/95 backdrop-blur rounded-3xl shadow-2xl w-full max-w-4xl p-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <Shield className="text-purple-600" size={40} />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              GitanX
+            </h1>
+          </div>
+          <p className="text-gray-600 text-lg">Protecteur de Script Lua Professionnel</p>
+        </div>
+
+        {/* Input Section */}
+        <div className="mb-6">
+          <label className="block text-gray-700 font-semibold mb-3 flex items-center gap-2">
+            <Lock size={20} className="text-purple-600" />
+            Votre Script Lua :
+          </label>
+          <textarea
+            value={inputScript}
+            onChange={(e) => setInputScript(e.target.value)}
+            placeholder="Collez votre script Lua ici...
+
+Exemple:
+print('Hello World')
+game.StarterGui:SetCore('SendNotification', {
+    Title = 'Mon Script';
+    Text = 'Script chargé!';
+})"
+            className="w-full h-64 p-4 border-2 border-gray-300 rounded-xl font-mono text-sm resize-none focus:border-purple-500 focus:outline-none transition-colors"
+          />
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-4 mb-6 flex-wrap">
+          <button
+            onClick={protectScript}
+            className="flex-1 min-w-[200px] bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-xl font-bold hover:shadow-lg hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
+          >
+            <Shield size={20} />
+            Protéger le Script
+          </button>
+          <button
+            onClick={copyLoadstring}
+            className="flex-1 min-w-[150px] bg-green-500 text-white px-6 py-4 rounded-xl font-bold hover:bg-green-600 hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
+          >
+            <Copy size={20} />
+            Copier
+          </button>
+          <button
+            onClick={clearAll}
+            className="bg-red-500 text-white px-6 py-4 rounded-xl font-bold hover:bg-red-600 hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
+          >
+            <Trash2 size={20} />
+            Effacer
+          </button>
+        </div>
+
+        {/* Output Section */}
+        {loadstring && (
+          <div className="mb-6 animate-fade-in">
+            <label className="block text-gray-700 font-semibold mb-3 flex items-center gap-2">
+              <CheckCircle size={20} className="text-green-500" />
+              Loadstring Généré :
+            </label>
+            <div className="bg-gray-900 text-green-400 p-4 rounded-xl font-mono text-sm break-all">
+              {loadstring}
+            </div>
+            <div className="mt-3 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+              <p className="text-sm text-blue-800">
+                <strong>🔒 Protection activée :</strong> Le lien est accessible uniquement depuis les executors Roblox. 
+                Les navigateurs verront "Access Denied".
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Info Box */}
+        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-l-4 border-purple-600 p-6 rounded-xl">
+          <h3 className="text-purple-700 font-bold mb-3 text-lg">✨ Fonctionnalités :</h3>
+          <ul className="space-y-2 text-gray-700">
+            <li className="flex items-start gap-2">
+              <span className="text-purple-600 font-bold">•</span>
+              <span>🔒 Protection contre l'accès depuis les navigateurs</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-purple-600 font-bold">•</span>
+              <span>🛡️ Scripts stockés de manière sécurisée</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-purple-600 font-bold">•</span>
+              <span>⚡ Loadstring unique pour chaque script</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-purple-600 font-bold">•</span>
+              <span>🚀 Compatible avec tous les executors</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-purple-600 font-bold">•</span>
+              <span>💯 100% gratuit et sans limite</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-8 pt-6 border-t border-gray-200">
+          <p className="text-gray-600">Made with ❤️ by <span className="font-bold text-purple-600">GitanX</span> | © 2026</p>
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes slide-in {
+          from {
+            transform: translateX(400px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-slide-in {
+          animation: slide-in 0.3s ease;
+        }
+        
+        .animate-fade-in {
+          animation: fade-in 0.4s ease;
+        }
+      `}</style>
+    </div>
+  );
+}
