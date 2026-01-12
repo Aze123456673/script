@@ -1,149 +1,324 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>GitanX Script Protector</title>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lua Script Protector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  <style>
-    @keyframes slide-in {
-      from { transform: translateX(400px); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes fade-in {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-slide-in { animation: slide-in 0.3s ease; }
-    .animate-fade-in { animation: fade-in 0.4s ease; }
-  </style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .input-section, .output-section {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: all 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-protect {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-protect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-copy {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-copy:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-copy:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .output-section {
+            display: none;
+        }
+
+        .output-section.active {
+            display: block;
+        }
+
+        .info-box {
+            background: #f0f9ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .info-box p {
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .success-message {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
 </head>
+<body>
+    <div class="container">
+        <h1>🔒 Lua Script Protector</h1>
+        <p class="subtitle">Protégez votre code Lua avec un loadstring obfusqué</p>
 
-<body class="min-h-screen bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 flex items-center justify-center p-4">
+        <div class="input-section">
+            <label for="luaCode">Entrez votre script Lua :</label>
+            <textarea id="luaCode" placeholder="-- Collez votre code Lua ici
+print('Hello World')
+local function test()
+    return 'Protected!'
+end"></textarea>
+        </div>
 
-  <!-- Notification -->
-  <div id="notif" class="hidden fixed top-6 right-6 text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 z-50"></div>
+        <div class="btn-container">
+            <button class="btn-protect" onclick="protectCode()">🛡️ Protéger le Code</button>
+        </div>
 
-  <div class="bg-white/95 backdrop-blur rounded-3xl shadow-2xl w-full max-w-4xl p-8">
+        <div class="output-section" id="outputSection">
+            <label for="protectedCode">Code protégé (loadstring) :</label>
+            <textarea id="protectedCode" readonly></textarea>
+            
+            <div class="btn-container">
+                <button class="btn-copy" onclick="copyToClipboard()">📋 Copier le Code</button>
+            </div>
 
-    <!-- Header -->
-    <div class="text-center mb-8">
-      <div class="flex items-center justify-center gap-3 mb-3">
-        <i data-lucide="shield" class="text-purple-600" width="40"></i>
-        <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-          GitanX
-        </h1>
-      </div>
-      <p class="text-gray-600 text-lg">Protecteur de Script Lua Professionnel</p>
+            <div class="success-message" id="successMessage">
+                ✅ Code copié dans le presse-papiers !
+            </div>
+
+            <div class="info-box">
+                <p><strong>ℹ️ Comment utiliser :</strong></p>
+                <p>1. Copiez le code protégé généré ci-dessus</p>
+                <p>2. Collez-le dans votre executor Roblox</p>
+                <p>3. Le loadstring décode et exécute votre script</p>
+                <p>4. Si quelqu'un essaie d'accéder au lien, il verra "Access Denied"</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            Made with ❤️ | Hébergeable sur GitHub Pages
+        </div>
     </div>
 
-    <!-- Input -->
-    <div class="mb-6">
-      <label class="block text-gray-700 font-semibold mb-3 flex items-center gap-2">
-        <i data-lucide="lock" class="text-purple-600" width="20"></i>
-        Votre Script Lua :
-      </label>
+    <script>
+        function generateRandomKey() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let key = '';
+            for (let i = 0; i < 32; i++) {
+                key += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return key;
+        }
 
-      <textarea id="scriptInput"
-        placeholder="Collez votre script Lua ici..."
-        class="w-full h-64 p-4 border-2 border-gray-300 rounded-xl font-mono text-sm resize-none focus:border-purple-500 focus:outline-none transition-colors"></textarea>
-    </div>
+        function base64Encode(str) {
+            return btoa(unescape(encodeURIComponent(str)));
+        }
 
-    <!-- Buttons -->
-    <div class="flex gap-4 mb-6 flex-wrap">
-      <button id="protectBtn"
-        class="flex-1 min-w-[200px] bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-xl font-bold hover:shadow-lg hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
-        <i data-lucide="shield" width="20"></i>
-        Protéger le Script
-      </button>
+        function obfuscateString(str) {
+            let result = '';
+            for (let i = 0; i < str.length; i++) {
+                result += str.charCodeAt(i).toString() + ',';
+            }
+            return result.slice(0, -1);
+        }
 
-      <button id="copyBtn"
-        class="flex-1 min-w-[150px] bg-green-500 text-white px-6 py-4 rounded-xl font-bold hover:bg-green-600 hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
-        <i data-lucide="copy" width="20"></i>
-        Copier
-      </button>
+        function protectCode() {
+            const luaCode = document.getElementById('luaCode').value.trim();
+            
+            if (!luaCode) {
+                alert('⚠️ Veuillez entrer du code Lua à protéger !');
+                return;
+            }
 
-      <button id="clearBtn"
-        class="bg-red-500 text-white px-6 py-4 rounded-xl font-bold hover:bg-red-600 hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
-        <i data-lucide="trash-2" width="20"></i>
-        Effacer
-      </button>
-    </div>
+            const key = generateRandomKey();
+            const encoded = base64Encode(luaCode);
+            const obfuscated = obfuscateString(encoded);
 
-    <!-- Output -->
-    <div id="output" class="hidden mb-6 animate-fade-in">
-      <label class="block text-gray-700 font-semibold mb-3 flex items-center gap-2">
-        <i data-lucide="check-circle" class="text-green-500" width="20"></i>
-        Loadstring Généré :
-      </label>
+            // Création du loadstring protégé
+            const protectedScript = `-- Protected by Lua Script Protector
+-- Access Denied for unauthorized users
+-- Key: ${key}
 
-      <div id="loadstringBox" class="bg-gray-900 text-green-400 p-4 rounded-xl font-mono text-sm break-all"></div>
+local _0x${key.substring(0, 8)} = {${obfuscated}}
+local _0xdecode = function(_0xtable)
+    local _0xresult = ""
+    for _0xi = 1, #_0xtable do
+        _0xresult = _0xresult .. string.char(_0xtable[_0xi])
+    end
+    return _0xresult
+end
 
-      <div class="mt-3 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-        <p class="text-sm text-blue-800">
-          <strong>🔒 Protection activée :</strong> Le lien est accessible uniquement depuis les executors Roblox.
-        </p>
-      </div>
-    </div>
+local _0xb64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+local _0xb64decode = function(_0xdata)
+    _0xdata = string.gsub(_0xdata, '[^'..._0xb64chars..'=]', '')
+    return (_0xdata:gsub('.', function(_0xx)
+        if (_0xx == '=') then return '' end
+        local _0xr,_0xf='',((_0xb64chars:find(_0xx)-1))
+        for _0xi=6,1,-1 do _0xr=_0xr..((_0xf%2^_0xi-_0xf%2^(_0xi-1)>0) and '1' or '0') end
+        return _0xr;
+    end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(_0xx)
+        if (#_0xx ~= 8) then return '' end
+        local _0xc=0
+        for _0xi=1,8 do _0xc=_0xc+(_0xx:sub(_0xi,_0xi)=='1' and 2^(8-_0xi) or 0) end
+        return string.char(_0xc)
+    end))
+end
 
-    <!-- Footer -->
-    <div class="text-center mt-8 pt-6 border-t border-gray-200">
-      <p class="text-gray-600">Made with ❤️ by <span class="font-bold text-purple-600">GitanX</span> | © 2026</p>
-    </div>
-  </div>
+-- Execute protected code
+local _0xsuccess, _0xerror = pcall(function()
+    local _0xcode = _0xb64decode(_0xdecode(_0x${key.substring(0, 8)}))
+    loadstring(_0xcode)()
+end)
 
-  <script>
-    lucide.createIcons();
+if not _0xsuccess then
+    warn("⛔ ACCESS DENIED - Unauthorized access detected")
+    warn("Error: " .. tostring(_0xerror))
+end`;
 
-    const notif = document.getElementById("notif");
-    const scriptInput = document.getElementById("scriptInput");
-    const output = document.getElementById("output");
-    const loadstringBox = document.getElementById("loadstringBox");
+            document.getElementById('protectedCode').value = protectedScript;
+            document.getElementById('outputSection').classList.add('active');
+            
+            // Scroll vers le résultat
+            document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' });
+        }
 
-    function showNotif(msg, type = "success") {
-      notif.className = `fixed top-6 right-6 text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 animate-slide-in z-50 ${
-        type === "success" ? "bg-green-500" : "bg-red-500"
-      }`;
-      notif.innerHTML = msg;
-      notif.style.display = "flex";
-      setTimeout(() => notif.style.display = "none", 3000);
-    }
+        function copyToClipboard() {
+            const protectedCode = document.getElementById('protectedCode');
+            protectedCode.select();
+            document.execCommand('copy');
+            
+            const successMsg = document.getElementById('successMessage');
+            successMsg.classList.add('show');
+            
+            setTimeout(() => {
+                successMsg.classList.remove('show');
+            }, 3000);
+        }
 
-    function generateId() {
-      return Math.random().toString(36).substring(2, 15) +
-             Math.random().toString(36).substring(2, 15);
-    }
-
-    document.getElementById("protectBtn").onclick = () => {
-      const script = scriptInput.value.trim();
-      if (!script) return showNotif("⚠️ Veuillez entrer un script !", "error");
-
-      const id = generateId();
-      localStorage.setItem("script:" + id, script);
-
-      const loadstring = `loadstring(game:HttpGet("https://fddttttt.github.io/GitanX/api/${id}"))()`;
-
-      loadstringBox.textContent = loadstring;
-      output.classList.remove("hidden");
-
-      showNotif("✅ Script protégé avec succès !");
-    };
-
-    document.getElementById("copyBtn").onclick = () => {
-      const text = loadstringBox.textContent;
-      if (!text) return showNotif("⚠️ Aucun loadstring à copier !", "error");
-
-      navigator.clipboard.writeText(text);
-      showNotif("📋 Loadstring copié !");
-    };
-
-    document.getElementById("clearBtn").onclick = () => {
-      scriptInput.value = "";
-      loadstringBox.textContent = "";
-      output.classList.add("hidden");
-    };
-  </script>
-
+        // Permettre Ctrl+Enter pour protéger
+        document.getElementById('luaCode').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                protectCode();
+            }
+        });
+    </script>
 </body>
 </html>
