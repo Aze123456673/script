@@ -93,11 +93,40 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .file-label:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .file-name {
+            display: inline-block;
+            margin-left: 15px;
+            color: #666;
+            font-style: italic;
+        }
+
         .btn-container {
             display: flex;
             gap: 15px;
             justify-content: center;
             margin: 20px 0;
+            flex-wrap: wrap;
         }
 
         button {
@@ -130,7 +159,16 @@
         .btn-copy:hover {
             background: #059669;
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-copy-link {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .btn-copy-link:hover {
+            background: #7c3aed;
+            transform: translateY(-2px);
         }
 
         .output-section {
@@ -161,6 +199,12 @@
             line-height: 1.6;
         }
 
+        .link-box a {
+            color: #3b82f6;
+            text-decoration: underline;
+            word-break: break-all;
+        }
+
         .info-box {
             background: #f0f9ff;
             border-left: 4px solid #667eea;
@@ -171,20 +215,6 @@
 
         .info-box p {
             color: #334155;
-            line-height: 1.6;
-            margin-bottom: 8px;
-        }
-
-        .warning-box {
-            background: #fef3c7;
-            border-left: 4px solid #f59e0b;
-            padding: 15px;
-            margin-top: 15px;
-            border-radius: 5px;
-        }
-
-        .warning-box p {
-            color: #92400e;
             line-height: 1.6;
             margin-bottom: 8px;
         }
@@ -222,97 +252,53 @@
             color: #666;
             font-size: 0.9em;
         }
-
-        .raw-output {
-            display: none;
-            font-family: 'Courier New', monospace;
-            white-space: pre;
-            padding: 20px;
-            background: #1e293b;
-            color: #10b981;
-        }
     </style>
 </head>
 <body>
     <div id="mainApp"></div>
-    <div id="rawOutput" class="raw-output"></div>
 
     <script>
-        const STORAGE_KEY = 'luaScripts_v2';
-
-        function generateScriptId() {
-            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-            let id = '';
-            for (let i = 0; i < 32; i++) {
-                id += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return id;
-        }
-
-        async function saveScriptToStorage(scriptCode) {
-            const scriptId = generateScriptId();
-            try {
-                const result = await window.storage.set(`script_${scriptId}`, scriptCode, false);
-                if (result) {
-                    return scriptId;
-                }
-            } catch (error) {
-                console.error('Storage error:', error);
-            }
-            return null;
-        }
-
-        async function getScriptFromStorage(scriptId) {
-            try {
-                const result = await window.storage.get(`script_${scriptId}`, false);
-                if (result) {
-                    return result.value;
-                }
-            } catch (error) {
-                console.log('Script not found');
-            }
-            return null;
-        }
-
+        // Vérifier si on est sur une page raw
         const urlParams = new URLSearchParams(window.location.search);
-        const rawParam = urlParams.get('raw');
+        const rawData = urlParams.get('r');
 
-        if (rawParam) {
-            showRawScript(rawParam);
+        if (rawData) {
+            showRawScript(rawData);
         } else {
             showMainPage();
         }
 
-        async function showRawScript(scriptId) {
-            const script = await getScriptFromStorage(scriptId);
-            
-            const userAgent = navigator.userAgent.toLowerCase();
-            const referer = document.referrer.toLowerCase();
-            
-            const isExecutor = userAgent.includes('roblox') || 
-                             userAgent.includes('synapse') ||
-                             referer.includes('roblox') ||
-                             window.location.hash === '#executor';
+        function showRawScript(encodedData) {
+            try {
+                // Décoder le script
+                const decoded = atob(encodedData);
+                
+                // Vérifier si c'est un executor (user agent basique)
+                const userAgent = navigator.userAgent.toLowerCase();
+                const isExecutor = userAgent.includes('roblox') || 
+                                 window.location.hash === '#executor' ||
+                                 document.referrer.includes('roblox');
 
-            if (isExecutor && script) {
-                document.body.style.display = 'none';
-                const rawDiv = document.getElementById('rawOutput');
-                rawDiv.style.display = 'block';
-                rawDiv.textContent = script;
-                document.body.innerHTML = '';
-                document.write(script);
-            } else {
-                document.getElementById('mainApp').innerHTML = `
-                    <div class="container">
-                        <div class="access-denied">
-                            <div class="lock-icon">🔒</div>
-                            <h1>⛔ ACCESS DENIED</h1>
-                            <p>Unauthorized access detected</p>
-                            <p style="font-size: 1em; margin-top: 20px; color: #999;">Error Code: 403 - Forbidden</p>
-                            <p style="font-size: 0.9em; margin-top: 10px; color: #ccc;">This resource is only accessible via Roblox executors</p>
+                if (isExecutor) {
+                    // Pour les executors : retourner le code brut
+                    document.body.innerHTML = '';
+                    document.write(decoded);
+                } else {
+                    // Pour les navigateurs : Access Denied
+                    document.getElementById('mainApp').innerHTML = `
+                        <div class="container">
+                            <div class="access-denied">
+                                <div class="lock-icon">🔒</div>
+                                <h1>⛔ ACCESS DENIED</h1>
+                                <p>Unauthorized access detected</p>
+                                <p style="font-size: 1em; margin-top: 20px; color: #999;">Error Code: 403 - Forbidden</p>
+                                <p style="font-size: 0.9em; margin-top: 10px; color: #ccc;">This resource is only accessible via Roblox executors</p>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
+            } catch (e) {
+                document.body.innerHTML = '<h1 style="color: red; text-align: center; margin-top: 50px;">Invalid or corrupted link</h1>';
             }
         }
 
@@ -323,14 +309,23 @@
                     <p class="subtitle">Protégez votre code Lua avec un lien unique</p>
 
                     <div class="input-section">
-                        <label for="luaCode">Entrez votre script Lua :</label>
+                        <label>📁 Importer un fichier Lua :</label>
+                        <label for="fileInput" class="file-label">
+                            📂 Choisir un fichier
+                        </label>
+                        <span class="file-name" id="fileName"></span>
+                        <input type="file" id="fileInput" class="file-input" accept=".lua,.txt">
+                    </div>
+
+                    <div class="input-section">
+                        <label for="luaCode">Ou entrez votre script Lua :</label>
                         <textarea id="luaCode" placeholder="-- Collez votre code Lua ici
 print('Hello World')
 local function test()
     return 'Protected!'
 end
 
--- Votre script sera protégé et accessible uniquement via executor"></textarea>
+-- Votre script sera protégé"></textarea>
                     </div>
 
                     <div class="btn-container">
@@ -339,73 +334,101 @@ end
 
                     <div class="output-section" id="outputSection">
                         <div class="link-box">
-                            <label>🔗 Votre loadstring protégé :</label>
-                            <code id="loadstringCode"></code>
+                            <label>🔗 Lien Raw :</label>
+                            <a id="rawLink" href="#" target="_blank"></a>
+                            <div class="btn-container" style="margin-top: 15px;">
+                                <button class="btn-copy-link" onclick="copyRawLink()">📋 Copier le Lien</button>
+                            </div>
                         </div>
-                        
-                        <div class="btn-container">
-                            <button class="btn-copy" onclick="copyLoadstring()">📋 Copier le Loadstring</button>
+
+                        <div class="link-box">
+                            <label>🔗 Votre loadstring :</label>
+                            <code id="loadstringCode"></code>
+                            <div class="btn-container" style="margin-top: 15px;">
+                                <button class="btn-copy" onclick="copyLoadstring()">📋 Copier le Loadstring</button>
+                            </div>
                         </div>
 
                         <div class="success-message" id="successMessage">
-                            ✅ Loadstring copié dans le presse-papiers !
+                            ✅ Copié dans le presse-papiers !
                         </div>
 
                         <div class="info-box">
                             <p><strong>ℹ️ Comment ça marche :</strong></p>
-                            <p>✅ Copiez le loadstring et collez-le dans votre executor</p>
+                            <p>✅ Votre code est encodé en Base64 dans l'URL</p>
                             <p>✅ Les executors Roblox peuvent exécuter le script</p>
                             <p>✅ Si quelqu'un ouvre le lien dans un navigateur : Access Denied</p>
-                            <p>✅ Votre code est stocké de manière persistante</p>
-                        </div>
-
-                        <div class="warning-box">
-                            <p><strong>⚠️ Note importante :</strong></p>
-                            <p>Ce système utilise le stockage persistant de Claude Artifacts. Pour un déploiement GitHub Pages complet, vous devrez implémenter un backend (comme Vercel/Firebase) pour stocker les scripts.</p>
+                            <p>✅ Aucun serveur nécessaire - 100% client-side</p>
+                            <p>✅ Compatible GitHub Pages</p>
                         </div>
                     </div>
 
                     <div class="footer">
-                        Made with ❤️ | Prototype avec stockage persistant
+                        Made with ❤️ | Prêt pour GitHub Pages
                     </div>
                 </div>
             `;
+
+            // Gestionnaire de fichier
+            const fileInput = document.getElementById('fileInput');
+            const fileName = document.getElementById('fileName');
+            
+            fileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    fileName.textContent = file.name;
+                    const text = await file.text();
+                    document.getElementById('luaCode').value = text;
+                }
+            });
         }
 
-        async function protectCode() {
+        function protectCode() {
             const luaCode = document.getElementById('luaCode').value.trim();
             
             if (!luaCode) {
-                alert('⚠️ Veuillez entrer du code Lua à protéger !');
+                alert('⚠️ Veuillez entrer du code Lua ou importer un fichier !');
                 return;
             }
 
-            const scriptId = await saveScriptToStorage(luaCode);
+            // Encoder le script en Base64
+            const encoded = btoa(unescape(encodeURIComponent(luaCode)));
             
-            if (!scriptId) {
-                alert('❌ Erreur lors de la sauvegarde du script. Veuillez réessayer.');
-                return;
-            }
-
+            // Créer l'URL
             const baseUrl = window.location.origin + window.location.pathname;
-            const scriptUrl = `${baseUrl}?raw=${scriptId}`;
+            const rawUrl = `${baseUrl}?r=${encoded}#executor`;
             
-            const loadstring = `loadstring(game:HttpGet("${scriptUrl}#executor"))()`;
+            // Afficher les résultats
+            document.getElementById('rawLink').href = rawUrl;
+            document.getElementById('rawLink').textContent = rawUrl;
             
+            const loadstring = `loadstring(game:HttpGet("${rawUrl}"))()`;
             document.getElementById('loadstringCode').textContent = loadstring;
+            
             document.getElementById('outputSection').classList.add('active');
             document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyRawLink() {
+            const link = document.getElementById('rawLink').textContent;
+            navigator.clipboard.writeText(link).then(() => {
+                showSuccess();
+            });
         }
 
         function copyLoadstring() {
             const code = document.getElementById('loadstringCode').textContent;
             navigator.clipboard.writeText(code).then(() => {
-                const successMsg = document.getElementById('successMessage');
-                successMsg.classList.add('show');
-                setTimeout(() => {
-                    successMsg.classList.remove('show');
-                }, 3000);
+                showSuccess();
             });
+        }
+
+        function showSuccess() {
+            const successMsg = document.getElementById('successMessage');
+            successMsg.classList.add('show');
+            setTimeout(() => {
+                successMsg.classList.remove('show');
+            }, 3000);
         }
     </script>
 </body>
