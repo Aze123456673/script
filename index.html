@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,47 +8,39 @@
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center p-6">
   <h1 class="text-3xl font-bold mb-6">MonLuaProtector</h1>
-
   <div class="bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-lg">
     <div class="mb-4">
       <label class="block font-semibold mb-1">Upload Lua file:</label>
       <input id="fileInput" type="file" accept=".lua,.txt" class="w-full mb-3 text-black p-2 rounded" />
       <button id="uploadBtn" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">Generate raw from file</button>
     </div>
-
     <div class="mb-4">
       <label class="block font-semibold mb-1">Or enter Lua code:</label>
       <textarea id="luaText" rows="6" class="w-full text-black p-2 rounded"></textarea>
       <button id="textBtn" class="mt-2 bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Generate raw from text</button>
     </div>
-
     <div id="result" class="hidden mt-4 p-3 bg-gray-700 rounded space-y-3">
-
       <div>
         <p>Raw link:</p>
         <a id="rawLink" href="#" target="_blank" class="text-blue-400 underline"></a>
         <button id="copyBtn" class="ml-2 bg-gray-600 px-2 py-1 rounded">Copy</button>
       </div>
-
       <div>
         <p>Loadstring:</p>
         <code id="loadstringBox" class="bg-black/40 px-2 py-1 rounded block break-all"></code>
         <button id="copyLoadstring" class="mt-1 bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded">Copy Loadstring</button>
       </div>
-
     </div>
   </div>
-
   <script>
     async function sendData(text) {
-      const res = await fetch("/upload", {
+      const res = await fetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, isText: true })
       });
       return res.json();
     }
-
     document.getElementById("uploadBtn").onclick = async () => {
       const file = document.getElementById("fileInput").files[0];
       if (!file) return alert("Please select a file first");
@@ -57,32 +48,26 @@
       const data = await sendData(text);
       showLink(data.raw);
     };
-
     document.getElementById("textBtn").onclick = async () => {
       const text = document.getElementById("luaText").value.trim();
       if (!text) return alert("Please enter Lua code first");
       const data = await sendData(text);
       showLink(data.raw);
     };
-
     function showLink(link) {
       const res = document.getElementById("result");
       res.classList.remove("hidden");
-
       // Raw Link
       const rawLink = document.getElementById("rawLink");
       rawLink.textContent = link;
       rawLink.href = link;
-
       document.getElementById("copyBtn").onclick = () => {
         navigator.clipboard.writeText(link);
         alert("Link copied!");
       };
-
       // Loadstring
       const loadstringText = `loadstring(game:HttpGet("${link}"))()`;
       document.getElementById("loadstringBox").textContent = loadstringText;
-
       document.getElementById("copyLoadstring").onclick = () => {
         navigator.clipboard.writeText(loadstringText);
         alert("Loadstring copied!");
