@@ -8,19 +8,12 @@
 <body>
     <h1>GitanX Script Hub</h1>
     <p>Script chargé depuis GitHub Pages</p>
-
-    <!-- Ton script Lua intégré dans le HTML -->
-    <script type="text/lua">
+    
+    <!-- LUASCRIPT_START -->
 loadstring(game:HttpGet("https://raw.githubusercontent.com/fddttttt/GitanX/refs/heads/main/GitanX.lua"))()
 print("Script exécuté")
-
-game.StarterGui:SetCore("SendNotification", {
-    Title = "GitanX";
-    Text = "Script chargé avec succès!";
-    Duration = 5;
-})
-
--- Ton script principal ici
-    </script>
+game.StarterGui:SetCore("SendNotification", {Title = "GitanX"; Text = "Script chargé avec succès!"; Duration = 5;})
+<!-- LUASCRIPT_END -->
+    
 </body>
 </html>
