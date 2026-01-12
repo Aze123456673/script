@@ -15,9 +15,6 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
         }
 
@@ -27,7 +24,23 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             padding: 40px;
             max-width: 900px;
-            width: 100%;
+            margin: 40px auto;
+        }
+
+        .access-denied {
+            text-align: center;
+            padding: 100px 20px;
+        }
+
+        .access-denied h1 {
+            color: #ef4444;
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .access-denied p {
+            color: #666;
+            font-size: 1.5em;
         }
 
         h1 {
@@ -114,18 +127,31 @@
             box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4);
         }
 
-        .btn-copy:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
         .output-section {
             display: none;
         }
 
         .output-section.active {
             display: block;
+        }
+
+        .link-box {
+            background: #f8fafc;
+            border: 2px solid #667eea;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .link-box code {
+            background: #1e293b;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 5px;
+            display: block;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            font-size: 13px;
         }
 
         .info-box {
@@ -139,6 +165,7 @@
         .info-box p {
             color: #334155;
             line-height: 1.6;
+            margin-bottom: 8px;
         }
 
         .success-message {
@@ -175,69 +202,124 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔒 Lua Script Protector</h1>
-        <p class="subtitle">Protégez votre code Lua avec un loadstring obfusqué</p>
+    <div id="mainApp"></div>
 
-        <div class="input-section">
-            <label for="luaCode">Entrez votre script Lua :</label>
-            <textarea id="luaCode" placeholder="-- Collez votre code Lua ici
+    <script>
+        // Système de stockage des scripts
+        const STORAGE_KEY = 'luaScripts';
+
+        function generateScriptId() {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let id = '';
+            for (let i = 0; i < 32; i++) {
+                id += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return id;
+        }
+
+        function saveScript(scriptCode) {
+            const scriptId = generateScriptId();
+            const scripts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            scripts[scriptId] = {
+                code: scriptCode,
+                created: new Date().toISOString()
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(scripts));
+            return scriptId;
+        }
+
+        function getScript(scriptId) {
+            const scripts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            return scripts[scriptId];
+        }
+
+        // Vérifier si on est sur une page de script
+        const urlParams = new URLSearchParams(window.location.search);
+        const scriptId = urlParams.get('id');
+
+        if (scriptId) {
+            showScriptPage(scriptId);
+        } else {
+            showMainPage();
+        }
+
+        function showScriptPage(scriptId) {
+            const script = getScript(scriptId);
+            
+            // Détection de l'user agent pour différencier navigateur vs executor
+            const isExecutor = navigator.userAgent.toLowerCase().includes('roblox') || 
+                             window.location.hash === '#executor';
+
+            if (isExecutor && script) {
+                // Pour les executors, retourner le code directement
+                document.body.innerHTML = `<pre>${script.code}</pre>`;
+            } else {
+                // Pour les navigateurs, afficher Access Denied
+                document.getElementById('mainApp').innerHTML = `
+                    <div class="container">
+                        <div class="access-denied">
+                            <h1>⛔ ACCESS DENIED</h1>
+                            <p>Unauthorized access detected</p>
+                            <p style="font-size: 1em; margin-top: 20px; color: #999;">Error Code: 403 - Forbidden</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function showMainPage() {
+            document.getElementById('mainApp').innerHTML = `
+                <div class="container">
+                    <h1>🔒 Lua Script Protector</h1>
+                    <p class="subtitle">Protégez votre code Lua avec un lien unique</p>
+
+                    <div class="input-section">
+                        <label for="luaCode">Entrez votre script Lua :</label>
+                        <textarea id="luaCode" placeholder="-- Collez votre code Lua ici
 print('Hello World')
 local function test()
     return 'Protected!'
 end"></textarea>
-        </div>
+                    </div>
 
-        <div class="btn-container">
-            <button class="btn-protect" onclick="protectCode()">🛡️ Protéger le Code</button>
-        </div>
+                    <div class="btn-container">
+                        <button class="btn-protect" onclick="protectCode()">🛡️ Générer le Lien</button>
+                    </div>
 
-        <div class="output-section" id="outputSection">
-            <label for="protectedCode">Code protégé (loadstring) :</label>
-            <textarea id="protectedCode" readonly></textarea>
-            
-            <div class="btn-container">
-                <button class="btn-copy" onclick="copyToClipboard()">📋 Copier le Code</button>
-            </div>
+                    <div class="output-section" id="outputSection">
+                        <div class="link-box">
+                            <label>🔗 Votre loadstring protégé :</label>
+                            <code id="loadstringCode"></code>
+                        </div>
+                        
+                        <div class="btn-container">
+                            <button class="btn-copy" onclick="copyLoadstring()">📋 Copier le Loadstring</button>
+                        </div>
 
-            <div class="success-message" id="successMessage">
-                ✅ Code copié dans le presse-papiers !
-            </div>
+                        <div class="success-message" id="successMessage">
+                            ✅ Loadstring copié dans le presse-papiers !
+                        </div>
 
-            <div class="info-box">
-                <p><strong>ℹ️ Comment utiliser :</strong></p>
-                <p>1. Copiez le code protégé généré ci-dessus</p>
-                <p>2. Collez-le dans votre executor Roblox</p>
-                <p>3. Le loadstring décode et exécute votre script</p>
-                <p>4. Si quelqu'un essaie d'accéder au lien, il verra "Access Denied"</p>
-            </div>
-        </div>
+                        <div class="info-box">
+                            <p><strong>ℹ️ Comment ça marche :</strong></p>
+                            <p>✅ Le loadstring ci-dessus exécute votre script</p>
+                            <p>✅ Les executors Roblox peuvent accéder au code</p>
+                            <p>✅ Si on ouvre le lien dans un navigateur : Access Denied</p>
+                            <p>✅ Votre code est stocké localement et sécurisé</p>
+                        </div>
 
-        <div class="footer">
-            Made with ❤️ | Hébergeable sur GitHub Pages
-        </div>
-    </div>
+                        <div class="info-box" style="background: #fef3c7; border-left-color: #f59e0b; margin-top: 15px;">
+                            <p><strong>⚠️ Important :</strong></p>
+                            <p>Pour héberger sur GitHub Pages, remplace l'URL de base par ton lien GitHub Pages</p>
+                            <p>Exemple: <code style="background: #fff; padding: 2px 6px; border-radius: 3px;">https://ton-username.github.io/ton-repo/</code></p>
+                        </div>
+                    </div>
 
-    <script>
-        function generateRandomKey() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let key = '';
-            for (let i = 0; i < 32; i++) {
-                key += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return key;
-        }
-
-        function base64Encode(str) {
-            return btoa(unescape(encodeURIComponent(str)));
-        }
-
-        function obfuscateString(str) {
-            let result = '';
-            for (let i = 0; i < str.length; i++) {
-                result += str.charCodeAt(i).toString() + ',';
-            }
-            return result.slice(0, -1);
+                    <div class="footer">
+                        Made with ❤️ | Hébergeable sur GitHub Pages
+                    </div>
+                </div>
+            `;
         }
 
         function protectCode() {
@@ -248,77 +330,27 @@ end"></textarea>
                 return;
             }
 
-            const key = generateRandomKey();
-            const encoded = base64Encode(luaCode);
-            const obfuscated = obfuscateString(encoded);
-
-            // Création du loadstring protégé
-            const protectedScript = `-- Protected by Lua Script Protector
--- Access Denied for unauthorized users
--- Key: ${key}
-
-local _0x${key.substring(0, 8)} = {${obfuscated}}
-local _0xdecode = function(_0xtable)
-    local _0xresult = ""
-    for _0xi = 1, #_0xtable do
-        _0xresult = _0xresult .. string.char(_0xtable[_0xi])
-    end
-    return _0xresult
-end
-
-local _0xb64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-local _0xb64decode = function(_0xdata)
-    _0xdata = string.gsub(_0xdata, '[^'..._0xb64chars..'=]', '')
-    return (_0xdata:gsub('.', function(_0xx)
-        if (_0xx == '=') then return '' end
-        local _0xr,_0xf='',((_0xb64chars:find(_0xx)-1))
-        for _0xi=6,1,-1 do _0xr=_0xr..((_0xf%2^_0xi-_0xf%2^(_0xi-1)>0) and '1' or '0') end
-        return _0xr;
-    end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(_0xx)
-        if (#_0xx ~= 8) then return '' end
-        local _0xc=0
-        for _0xi=1,8 do _0xc=_0xc+(_0xx:sub(_0xi,_0xi)=='1' and 2^(8-_0xi) or 0) end
-        return string.char(_0xc)
-    end))
-end
-
--- Execute protected code
-local _0xsuccess, _0xerror = pcall(function()
-    local _0xcode = _0xb64decode(_0xdecode(_0x${key.substring(0, 8)}))
-    loadstring(_0xcode)()
-end)
-
-if not _0xsuccess then
-    warn("⛔ ACCESS DENIED - Unauthorized access detected")
-    warn("Error: " .. tostring(_0xerror))
-end`;
-
-            document.getElementById('protectedCode').value = protectedScript;
-            document.getElementById('outputSection').classList.add('active');
+            const scriptId = saveScript(luaCode);
+            const baseUrl = window.location.origin + window.location.pathname;
+            const scriptUrl = `${baseUrl}?id=${scriptId}`;
             
-            // Scroll vers le résultat
+            const loadstring = `loadstring(game:HttpGet("${scriptUrl}#executor"))()`;
+            
+            document.getElementById('loadstringCode').textContent = loadstring;
+            document.getElementById('outputSection').classList.add('active');
             document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' });
         }
 
-        function copyToClipboard() {
-            const protectedCode = document.getElementById('protectedCode');
-            protectedCode.select();
-            document.execCommand('copy');
-            
-            const successMsg = document.getElementById('successMessage');
-            successMsg.classList.add('show');
-            
-            setTimeout(() => {
-                successMsg.classList.remove('show');
-            }, 3000);
+        function copyLoadstring() {
+            const code = document.getElementById('loadstringCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const successMsg = document.getElementById('successMessage');
+                successMsg.classList.add('show');
+                setTimeout(() => {
+                    successMsg.classList.remove('show');
+                }, 3000);
+            });
         }
-
-        // Permettre Ctrl+Enter pour protéger
-        document.getElementById('luaCode').addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.key === 'Enter') {
-                protectCode();
-            }
-        });
     </script>
 </body>
 </html>
