@@ -1,435 +1,93 @@
+
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lua Script Protector</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 40px;
-            max-width: 900px;
-            margin: 40px auto;
-        }
-
-        .access-denied {
-            text-align: center;
-            padding: 100px 20px;
-        }
-
-        .access-denied h1 {
-            color: #ef4444;
-            font-size: 4em;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .access-denied p {
-            color: #666;
-            font-size: 1.5em;
-        }
-
-        .lock-icon {
-            font-size: 6em;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            text-align: center;
-            color: #667eea;
-            margin-bottom: 10px;
-            font-size: 2.5em;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
-
-        .input-section, .output-section {
-            margin-bottom: 30px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 10px;
-            color: #333;
-            font-weight: 600;
-            font-size: 1.1em;
-        }
-
-        textarea {
-            width: 100%;
-            min-height: 200px;
-            padding: 15px;
-            border: 2px solid #667eea;
-            border-radius: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            resize: vertical;
-            transition: all 0.3s;
-        }
-
-        textarea:focus {
-            outline: none;
-            border-color: #764ba2;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .file-input {
-            display: none;
-        }
-
-        .file-label {
-            display: inline-block;
-            padding: 12px 30px;
-            background: #667eea;
-            color: white;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 600;
-            margin-bottom: 15px;
-        }
-
-        .file-label:hover {
-            background: #764ba2;
-            transform: translateY(-2px);
-        }
-
-        .file-name {
-            display: inline-block;
-            margin-left: 15px;
-            color: #666;
-            font-style: italic;
-        }
-
-        .btn-container {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-
-        button {
-            padding: 15px 40px;
-            font-size: 16px;
-            font-weight: 600;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .btn-protect {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-protect:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-copy {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-copy:hover {
-            background: #059669;
-            transform: translateY(-2px);
-        }
-
-        .btn-copy-link {
-            background: #8b5cf6;
-            color: white;
-        }
-
-        .btn-copy-link:hover {
-            background: #7c3aed;
-            transform: translateY(-2px);
-        }
-
-        .output-section {
-            display: none;
-        }
-
-        .output-section.active {
-            display: block;
-        }
-
-        .link-box {
-            background: #f8fafc;
-            border: 2px solid #667eea;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-        }
-
-        .link-box code {
-            background: #1e293b;
-            color: #10b981;
-            padding: 15px;
-            border-radius: 5px;
-            display: block;
-            font-family: 'Courier New', monospace;
-            word-break: break-all;
-            font-size: 13px;
-            line-height: 1.6;
-        }
-
-        .link-box a {
-            color: #3b82f6;
-            text-decoration: underline;
-            word-break: break-all;
-        }
-
-        .info-box {
-            background: #f0f9ff;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin-top: 20px;
-            border-radius: 5px;
-        }
-
-        .info-box p {
-            color: #334155;
-            line-height: 1.6;
-            margin-bottom: 8px;
-        }
-
-        .success-message {
-            background: #d1fae5;
-            border-left: 4px solid #10b981;
-            padding: 15px;
-            margin-top: 15px;
-            border-radius: 5px;
-            display: none;
-            color: #065f46;
-            font-weight: 600;
-        }
-
-        .success-message.show {
-            display: block;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            color: #666;
-            font-size: 0.9em;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MonLuaProtector</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div id="mainApp"></div>
+<body class="bg-gray-900 text-white flex flex-col items-center p-6">
+  <h1 class="text-3xl font-bold mb-6">MonLuaProtector</h1>
 
-    <script>
-        // Vérifier si on est sur une page raw
-        const urlParams = new URLSearchParams(window.location.search);
-        const rawData = urlParams.get('r');
+  <div class="bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-lg">
+    <div class="mb-4">
+      <label class="block font-semibold mb-1">Upload Lua file:</label>
+      <input id="fileInput" type="file" accept=".lua,.txt" class="w-full mb-3 text-black p-2 rounded" />
+      <button id="uploadBtn" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">Generate raw from file</button>
+    </div>
 
-        if (rawData) {
-            showRawScript(rawData);
-        } else {
-            showMainPage();
-        }
+    <div class="mb-4">
+      <label class="block font-semibold mb-1">Or enter Lua code:</label>
+      <textarea id="luaText" rows="6" class="w-full text-black p-2 rounded"></textarea>
+      <button id="textBtn" class="mt-2 bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Generate raw from text</button>
+    </div>
 
-        function showRawScript(encodedData) {
-            try {
-                // Décoder le script
-                const decoded = atob(encodedData);
-                
-                // Vérifier si c'est un executor (user agent basique)
-                const userAgent = navigator.userAgent.toLowerCase();
-                const isExecutor = userAgent.includes('roblox') || 
-                                 window.location.hash === '#executor' ||
-                                 document.referrer.includes('roblox');
+    <div id="result" class="hidden mt-4 p-3 bg-gray-700 rounded space-y-3">
 
-                if (isExecutor) {
-                    // Pour les executors : retourner le code brut
-                    document.body.innerHTML = '';
-                    document.write(decoded);
-                } else {
-                    // Pour les navigateurs : Access Denied
-                    document.getElementById('mainApp').innerHTML = `
-                        <div class="container">
-                            <div class="access-denied">
-                                <div class="lock-icon">🔒</div>
-                                <h1>⛔ ACCESS DENIED</h1>
-                                <p>Unauthorized access detected</p>
-                                <p style="font-size: 1em; margin-top: 20px; color: #999;">Error Code: 403 - Forbidden</p>
-                                <p style="font-size: 0.9em; margin-top: 10px; color: #ccc;">This resource is only accessible via Roblox executors</p>
-                            </div>
-                        </div>
-                    `;
-                }
-            } catch (e) {
-                document.body.innerHTML = '<h1 style="color: red; text-align: center; margin-top: 50px;">Invalid or corrupted link</h1>';
-            }
-        }
+      <div>
+        <p>Raw link:</p>
+        <a id="rawLink" href="#" target="_blank" class="text-blue-400 underline"></a>
+        <button id="copyBtn" class="ml-2 bg-gray-600 px-2 py-1 rounded">Copy</button>
+      </div>
 
-        function showMainPage() {
-            document.getElementById('mainApp').innerHTML = `
-                <div class="container">
-                    <h1>🔒 Lua Script Protector</h1>
-                    <p class="subtitle">Protégez votre code Lua avec un lien unique</p>
+      <div>
+        <p>Loadstring:</p>
+        <code id="loadstringBox" class="bg-black/40 px-2 py-1 rounded block break-all"></code>
+        <button id="copyLoadstring" class="mt-1 bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded">Copy Loadstring</button>
+      </div>
 
-                    <div class="input-section">
-                        <label>📁 Importer un fichier Lua :</label>
-                        <label for="fileInput" class="file-label">
-                            📂 Choisir un fichier
-                        </label>
-                        <span class="file-name" id="fileName"></span>
-                        <input type="file" id="fileInput" class="file-input" accept=".lua,.txt">
-                    </div>
+    </div>
+  </div>
 
-                    <div class="input-section">
-                        <label for="luaCode">Ou entrez votre script Lua :</label>
-                        <textarea id="luaCode" placeholder="-- Collez votre code Lua ici
-print('Hello World')
-local function test()
-    return 'Protected!'
-end
+  <script>
+    async function sendData(text) {
+      const res = await fetch("/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, isText: true })
+      });
+      return res.json();
+    }
 
--- Votre script sera protégé"></textarea>
-                    </div>
+    document.getElementById("uploadBtn").onclick = async () => {
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) return alert("Please select a file first");
+      const text = await file.text();
+      const data = await sendData(text);
+      showLink(data.raw);
+    };
 
-                    <div class="btn-container">
-                        <button class="btn-protect" onclick="protectCode()">🛡️ Générer le Lien</button>
-                    </div>
+    document.getElementById("textBtn").onclick = async () => {
+      const text = document.getElementById("luaText").value.trim();
+      if (!text) return alert("Please enter Lua code first");
+      const data = await sendData(text);
+      showLink(data.raw);
+    };
 
-                    <div class="output-section" id="outputSection">
-                        <div class="link-box">
-                            <label>🔗 Lien Raw :</label>
-                            <a id="rawLink" href="#" target="_blank"></a>
-                            <div class="btn-container" style="margin-top: 15px;">
-                                <button class="btn-copy-link" onclick="copyRawLink()">📋 Copier le Lien</button>
-                            </div>
-                        </div>
+    function showLink(link) {
+      const res = document.getElementById("result");
+      res.classList.remove("hidden");
 
-                        <div class="link-box">
-                            <label>🔗 Votre loadstring :</label>
-                            <code id="loadstringCode"></code>
-                            <div class="btn-container" style="margin-top: 15px;">
-                                <button class="btn-copy" onclick="copyLoadstring()">📋 Copier le Loadstring</button>
-                            </div>
-                        </div>
+      // Raw Link
+      const rawLink = document.getElementById("rawLink");
+      rawLink.textContent = link;
+      rawLink.href = link;
 
-                        <div class="success-message" id="successMessage">
-                            ✅ Copié dans le presse-papiers !
-                        </div>
+      document.getElementById("copyBtn").onclick = () => {
+        navigator.clipboard.writeText(link);
+        alert("Link copied!");
+      };
 
-                        <div class="info-box">
-                            <p><strong>ℹ️ Comment ça marche :</strong></p>
-                            <p>✅ Votre code est encodé en Base64 dans l'URL</p>
-                            <p>✅ Les executors Roblox peuvent exécuter le script</p>
-                            <p>✅ Si quelqu'un ouvre le lien dans un navigateur : Access Denied</p>
-                            <p>✅ Aucun serveur nécessaire - 100% client-side</p>
-                            <p>✅ Compatible GitHub Pages</p>
-                        </div>
-                    </div>
+      // Loadstring
+      const loadstringText = `loadstring(game:HttpGet("${link}"))()`;
+      document.getElementById("loadstringBox").textContent = loadstringText;
 
-                    <div class="footer">
-                        Made with ❤️ | Prêt pour GitHub Pages
-                    </div>
-                </div>
-            `;
-
-            // Gestionnaire de fichier
-            const fileInput = document.getElementById('fileInput');
-            const fileName = document.getElementById('fileName');
-            
-            fileInput.addEventListener('change', async (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    fileName.textContent = file.name;
-                    const text = await file.text();
-                    document.getElementById('luaCode').value = text;
-                }
-            });
-        }
-
-        function protectCode() {
-            const luaCode = document.getElementById('luaCode').value.trim();
-            
-            if (!luaCode) {
-                alert('⚠️ Veuillez entrer du code Lua ou importer un fichier !');
-                return;
-            }
-
-            // Encoder le script en Base64
-            const encoded = btoa(unescape(encodeURIComponent(luaCode)));
-            
-            // Créer l'URL
-            const baseUrl = window.location.origin + window.location.pathname;
-            const rawUrl = `${baseUrl}?r=${encoded}#executor`;
-            
-            // Afficher les résultats
-            document.getElementById('rawLink').href = rawUrl;
-            document.getElementById('rawLink').textContent = rawUrl;
-            
-            const loadstring = `loadstring(game:HttpGet("${rawUrl}"))()`;
-            document.getElementById('loadstringCode').textContent = loadstring;
-            
-            document.getElementById('outputSection').classList.add('active');
-            document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function copyRawLink() {
-            const link = document.getElementById('rawLink').textContent;
-            navigator.clipboard.writeText(link).then(() => {
-                showSuccess();
-            });
-        }
-
-        function copyLoadstring() {
-            const code = document.getElementById('loadstringCode').textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                showSuccess();
-            });
-        }
-
-        function showSuccess() {
-            const successMsg = document.getElementById('successMessage');
-            successMsg.classList.add('show');
-            setTimeout(() => {
-                successMsg.classList.remove('show');
-            }, 3000);
-        }
-    </script>
+      document.getElementById("copyLoadstring").onclick = () => {
+        navigator.clipboard.writeText(loadstringText);
+        alert("Loadstring copied!");
+      };
+    }
+  </script>
 </body>
 </html>
