@@ -36,11 +36,17 @@
             color: #ef4444;
             font-size: 4em;
             margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
 
         .access-denied p {
             color: #666;
             font-size: 1.5em;
+        }
+
+        .lock-icon {
+            font-size: 6em;
+            margin-bottom: 20px;
         }
 
         h1 {
@@ -152,6 +158,7 @@
             font-family: 'Courier New', monospace;
             word-break: break-all;
             font-size: 13px;
+            line-height: 1.6;
         }
 
         .info-box {
@@ -168,6 +175,20 @@
             margin-bottom: 8px;
         }
 
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+        }
+
+        .warning-box p {
+            color: #92400e;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
         .success-message {
             background: #d1fae5;
             border-left: 4px solid #10b981;
@@ -175,6 +196,8 @@
             margin-top: 15px;
             border-radius: 5px;
             display: none;
+            color: #065f46;
+            font-weight: 600;
         }
 
         .success-message.show {
@@ -199,14 +222,23 @@
             color: #666;
             font-size: 0.9em;
         }
+
+        .raw-output {
+            display: none;
+            font-family: 'Courier New', monospace;
+            white-space: pre;
+            padding: 20px;
+            background: #1e293b;
+            color: #10b981;
+        }
     </style>
 </head>
 <body>
     <div id="mainApp"></div>
+    <div id="rawOutput" class="raw-output"></div>
 
     <script>
-        // Système de stockage des scripts
-        const STORAGE_KEY = 'luaScripts';
+        const STORAGE_KEY = 'luaScripts_v2';
 
         function generateScriptId() {
             const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -217,50 +249,67 @@
             return id;
         }
 
-        function saveScript(scriptCode) {
+        async function saveScriptToStorage(scriptCode) {
             const scriptId = generateScriptId();
-            const scripts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-            scripts[scriptId] = {
-                code: scriptCode,
-                created: new Date().toISOString()
-            };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(scripts));
-            return scriptId;
+            try {
+                const result = await window.storage.set(`script_${scriptId}`, scriptCode, false);
+                if (result) {
+                    return scriptId;
+                }
+            } catch (error) {
+                console.error('Storage error:', error);
+            }
+            return null;
         }
 
-        function getScript(scriptId) {
-            const scripts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-            return scripts[scriptId];
+        async function getScriptFromStorage(scriptId) {
+            try {
+                const result = await window.storage.get(`script_${scriptId}`, false);
+                if (result) {
+                    return result.value;
+                }
+            } catch (error) {
+                console.log('Script not found');
+            }
+            return null;
         }
 
-        // Vérifier si on est sur une page de script
         const urlParams = new URLSearchParams(window.location.search);
-        const scriptId = urlParams.get('id');
+        const rawParam = urlParams.get('raw');
 
-        if (scriptId) {
-            showScriptPage(scriptId);
+        if (rawParam) {
+            showRawScript(rawParam);
         } else {
             showMainPage();
         }
 
-        function showScriptPage(scriptId) {
-            const script = getScript(scriptId);
+        async function showRawScript(scriptId) {
+            const script = await getScriptFromStorage(scriptId);
             
-            // Détection de l'user agent pour différencier navigateur vs executor
-            const isExecutor = navigator.userAgent.toLowerCase().includes('roblox') || 
+            const userAgent = navigator.userAgent.toLowerCase();
+            const referer = document.referrer.toLowerCase();
+            
+            const isExecutor = userAgent.includes('roblox') || 
+                             userAgent.includes('synapse') ||
+                             referer.includes('roblox') ||
                              window.location.hash === '#executor';
 
             if (isExecutor && script) {
-                // Pour les executors, retourner le code directement
-                document.body.innerHTML = `<pre>${script.code}</pre>`;
+                document.body.style.display = 'none';
+                const rawDiv = document.getElementById('rawOutput');
+                rawDiv.style.display = 'block';
+                rawDiv.textContent = script;
+                document.body.innerHTML = '';
+                document.write(script);
             } else {
-                // Pour les navigateurs, afficher Access Denied
                 document.getElementById('mainApp').innerHTML = `
                     <div class="container">
                         <div class="access-denied">
+                            <div class="lock-icon">🔒</div>
                             <h1>⛔ ACCESS DENIED</h1>
                             <p>Unauthorized access detected</p>
                             <p style="font-size: 1em; margin-top: 20px; color: #999;">Error Code: 403 - Forbidden</p>
+                            <p style="font-size: 0.9em; margin-top: 10px; color: #ccc;">This resource is only accessible via Roblox executors</p>
                         </div>
                     </div>
                 `;
@@ -279,7 +328,9 @@
 print('Hello World')
 local function test()
     return 'Protected!'
-end"></textarea>
+end
+
+-- Votre script sera protégé et accessible uniquement via executor"></textarea>
                     </div>
 
                     <div class="btn-container">
@@ -302,27 +353,26 @@ end"></textarea>
 
                         <div class="info-box">
                             <p><strong>ℹ️ Comment ça marche :</strong></p>
-                            <p>✅ Le loadstring ci-dessus exécute votre script</p>
-                            <p>✅ Les executors Roblox peuvent accéder au code</p>
-                            <p>✅ Si on ouvre le lien dans un navigateur : Access Denied</p>
-                            <p>✅ Votre code est stocké localement et sécurisé</p>
+                            <p>✅ Copiez le loadstring et collez-le dans votre executor</p>
+                            <p>✅ Les executors Roblox peuvent exécuter le script</p>
+                            <p>✅ Si quelqu'un ouvre le lien dans un navigateur : Access Denied</p>
+                            <p>✅ Votre code est stocké de manière persistante</p>
                         </div>
 
-                        <div class="info-box" style="background: #fef3c7; border-left-color: #f59e0b; margin-top: 15px;">
-                            <p><strong>⚠️ Important :</strong></p>
-                            <p>Pour héberger sur GitHub Pages, remplace l'URL de base par ton lien GitHub Pages</p>
-                            <p>Exemple: <code style="background: #fff; padding: 2px 6px; border-radius: 3px;">https://ton-username.github.io/ton-repo/</code></p>
+                        <div class="warning-box">
+                            <p><strong>⚠️ Note importante :</strong></p>
+                            <p>Ce système utilise le stockage persistant de Claude Artifacts. Pour un déploiement GitHub Pages complet, vous devrez implémenter un backend (comme Vercel/Firebase) pour stocker les scripts.</p>
                         </div>
                     </div>
 
                     <div class="footer">
-                        Made with ❤️ | Hébergeable sur GitHub Pages
+                        Made with ❤️ | Prototype avec stockage persistant
                     </div>
                 </div>
             `;
         }
 
-        function protectCode() {
+        async function protectCode() {
             const luaCode = document.getElementById('luaCode').value.trim();
             
             if (!luaCode) {
@@ -330,9 +380,15 @@ end"></textarea>
                 return;
             }
 
-            const scriptId = saveScript(luaCode);
+            const scriptId = await saveScriptToStorage(luaCode);
+            
+            if (!scriptId) {
+                alert('❌ Erreur lors de la sauvegarde du script. Veuillez réessayer.');
+                return;
+            }
+
             const baseUrl = window.location.origin + window.location.pathname;
-            const scriptUrl = `${baseUrl}?id=${scriptId}`;
+            const scriptUrl = `${baseUrl}?raw=${scriptId}`;
             
             const loadstring = `loadstring(game:HttpGet("${scriptUrl}#executor"))()`;
             
